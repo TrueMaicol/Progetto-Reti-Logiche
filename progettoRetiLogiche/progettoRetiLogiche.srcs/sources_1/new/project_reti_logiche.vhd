@@ -1,15 +1,5 @@
-
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
-
--- Uncomment the following library declaration if using
--- arithmetic functions with Signed or Unsigned values
---use IEEE.NUMERIC_STD.ALL;
-
--- Uncomment the following library declaration if instantiating
--- any Xilinx leaf cells in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
 
 entity serial_to_parallel is port (
     i_clk : in std_logic;
@@ -19,17 +9,17 @@ entity serial_to_parallel is port (
 end serial_to_parallel;
 
 architecture Behavioral of serial_to_parallel is
-	signal temp: std_logic_vector(15 downto 0);
-	begin
-		process(i_clk)
-            begin
-			 if (i_clk'event and i_clk='1') then
-			     if(i_rst='1') then
-			        temp <= "0000000000000000";
-			     else    
-				    temp <= temp(14 downto 0) & i_w;
-				 end if;
-			end if;
+    signal temp: std_logic_vector(15 downto 0);
+    begin
+        process(i_clk, i_rst)
+        begin
+            if (i_clk'event and i_clk='1') then
+                if(i_rst='1') then
+                    temp <= "0000000000000000";
+                else    
+                    temp <= temp(14 downto 0) & i_w;
+                end if;
+		    end if;
 		end process;
 	o_par <= temp;
 end Behavioral;
@@ -50,7 +40,8 @@ entity project_reti_logiche is port (
     o_mem_addr : out std_logic_vector(15 downto 0); 
     i_mem_data : in std_logic_vector(7 downto 0); 
     o_mem_we : out std_logic; 
-    o_mem_en : out std_logic ); 
+    o_mem_en : out std_logic 
+); 
 end project_reti_logiche;
 
 architecture Behavioral of project_reti_logiche is
@@ -62,14 +53,19 @@ architecture Behavioral of project_reti_logiche is
     );
     end component;
     component DATAPATH_comp is port ( 
-        r0_load : in std_logic;
-        r1_load : in std_logic;
-        r2_load : in std_logic;
-        r3_load : in std_logic;
+        i_clk : in std_logic;
+        i_rst : in std_logic;
+        done : in std_logic;
+        i_data : in std_logic_vector(7 downto 0);
+        z0_load : in std_logic;
+        z1_load : in std_logic;
+        z2_load : in std_logic;
+        z3_load : in std_logic;
         o_z0 : out std_logic_vector(7 downto 0);
         o_z1 : out std_logic_vector(7 downto 0);
         o_z2 : out std_logic_vector(7 downto 0);
-        o_z3 : out std_logic_vector(7 downto 0)
+        o_z3 : out std_logic_vector(7 downto 0);
+        o_done : out std_logic
     );
     end component;
     
@@ -79,68 +75,71 @@ architecture Behavioral of project_reti_logiche is
     signal s_rst : std_logic;
     signal s_addr : std_logic_vector(15 downto 0);
     signal done : std_logic;
-    signal r0_load : std_logic;
-    signal r1_load : std_logic;
-    signal r2_load : std_logic;
-    signal r3_load : std_logic;
+    signal z0_load : std_logic;
+    signal z1_load : std_logic;
+    signal z2_load : std_logic;
+    signal z3_load : std_logic;
     signal d_sel : std_logic_vector(1 downto 0);
     
 begin
     SHIFTER : SHIFTER_comp port map(
-        i_clk,
-        i_rst,
-        s_w,
-        s_addr
+        i_clk => i_clk,
+        i_rst => s_rst,
+        i_w => s_w,
+        o_par => s_addr
     );
     
     DATAPATH : DATAPATH_comp port map(
-        r0_load,
-        r1_load,
-        r2_load,
-        r3_load,
-        o_z0,
-        o_z1,
-        o_z2,
-        o_z3
+        i_clk => i_clk,
+        i_rst => i_rst,
+        done => done,
+        i_data => i_mem_data,
+        z0_load => z0_load,
+        z1_load => z1_load,
+        z2_load => z2_load,
+        z3_load => z3_load,
+        o_z0 => o_z0,
+        o_z1 => o_z1,
+        o_z2 => o_z2,
+        o_z3 => o_z3,
+        o_done => o_done
     );
 
     fsm : process(i_clk, i_rst)
     begin 
-        if i_rst = '0' then
+        if i_rst = '1' then
             curr_state <= S0;
         elsif i_clk'event and i_clk = '1' then
-            case i_start is 
-                when '1' =>
-                    case curr_state is
-                        when S0 =>
-                            curr_state <= S1;
-                        when S1 =>
-                            curr_state <= S2;
-                        when S2 =>
-                            curr_state <= S3;
-                        when S3 =>
-                            curr_state <= S3;
-                        when S4 =>
-                            curr_state <= S0;
-                        when S5 =>
-                            curr_state <= S0;
-                    end case;
-                when '0' =>
-                    case curr_state is
-                        when S0 =>
-                            curr_state <= S0;
-                        when S1 =>
-                            curr_state <= S0;
-                        when S2 =>
-                            curr_state <= S0;
-                        when S3 =>
-                            curr_state <= S4;
-                        when S4 =>
-                            curr_state <= S5;
-                        when S5 =>
-                            curr_state <= S0;
-                    end case; 
-               end case;
+            case curr_state is
+                when S0 => 
+                    if i_start = '1' then
+                        curr_state <= S1;
+                    else 
+                        curr_state <= S0;
+                    end if;
+                when S1 =>
+                    if i_start = '1' then
+                        curr_state <= S2;
+                    else 
+                        curr_state <= S0;
+                    end if;
+                when S2 => 
+                    if i_start = '1' then
+                        curr_state <= S3;
+                    else 
+                        curr_state <= S4;
+                    end if;
+                when S3 =>
+                    if i_start = '1' then
+                        curr_state <= S3;
+                    else 
+                        curr_state <= S4;
+                    end if;
+                when S4 =>
+                    curr_state <= S5;
+                when S5 => 
+                    curr_state <= S0;
+            end case;
            end if;
     end process;
     
@@ -152,10 +151,10 @@ begin
         o_mem_we <= '0';
         o_mem_addr <= (others => '0');
         done <= '0';
-        r0_load <= '0';
-        r1_load <= '0';
-        r2_load <= '0';
-        r3_load <= '0';
+        z0_load <= '0';
+        z1_load <= '0';
+        z2_load <= '0';
+        z3_load <= '0';
         
         case curr_state is
             when S0 =>
@@ -171,16 +170,15 @@ begin
                 o_mem_en <= '1';
                 o_mem_addr <= s_addr;
                 if d_sel = "00" then
-                    r0_load <= '1';
+                    z0_load <= '1';
                 elsif d_sel = "01" then 
-                    r1_load <= '1';
+                    z1_load <= '1';
                 elsif d_sel = "10" then
-                    r2_load <= '1';
+                    z2_load <= '1';
                 else
-                    r3_load <= '1';
+                    z3_load <= '1';
                 end if;
              when S5 => 
-                o_done <= '1';
                 done <= '1';
              end case;
              end process;
@@ -190,18 +188,86 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
 entity datapath is port (
-    r0_load : in std_logic;
-    r1_load : in std_logic;
-    r2_load : in std_logic;
-    r3_load : in std_logic;
+    i_clk : in std_logic;
+    i_rst : in std_logic;
+    done : in std_logic;
+    i_data : in std_logic_vector(7 downto 0);
+    z0_load : in std_logic;
+    z1_load : in std_logic;
+    z2_load : in std_logic;
+    z3_load : in std_logic;
     o_z0 : out std_logic_vector(7 downto 0);
     o_z1 : out std_logic_vector(7 downto 0);
     o_z2 : out std_logic_vector(7 downto 0);
-    o_z3 : out std_logic_vector(7 downto 0)
+    o_z3 : out std_logic_vector(7 downto 0);
+    o_done : out std_logic
 );
 end datapath;
 
 architecture datapath_arch of datapath is
+    signal z0 : std_logic_vector(7 downto 0);
+    signal z1 : std_logic_vector(7 downto 0);
+    signal z2 : std_logic_vector(7 downto 0);
+    signal z3 : std_logic_vector(7 downto 0);
+    
     begin 
-    ...
+    z0_p : process(i_clk, i_rst)
+    begin
+        if i_rst = '1' then
+            z0 <= (others => '0');
+        elsif i_clk'event and i_clk = '1' then
+            if z0_load = '1' then
+                z0 <= i_data;
+            end if;
+        end if;
+    end process;
+    
+    z1_p : process(i_clk, i_rst)
+    begin
+        if i_rst = '1' then
+            z1 <= (others => '0');
+        elsif i_clk'event and i_clk = '1' then
+            if z1_load = '1' then
+                z1 <= i_data;
+            end if;
+        end if;
+    end process;
+    
+    z2_p : process(i_clk, i_rst)
+    begin
+        if i_rst = '1' then
+            z2 <= (others => '0');
+        elsif i_clk'event and i_clk = '1' then
+            if z2_load = '1' then
+                z2 <= i_data;
+            end if;
+        end if;
+    end process;
+    
+    z3_p : process(i_clk, i_rst)
+    begin
+        if i_rst = '1' then
+            z3 <= (others => '0');
+        elsif i_clk'event and i_clk = '1' then
+            if z3_load = '1' then
+                z3 <= i_data;
+            end if;
+        end if;
+    end process;
+    
+    out_p : process(i_clk, done)
+    begin 
+        o_z0 <= "00000000";
+        o_z1 <= "00000000";
+        o_z2 <= "00000000";
+        o_z3 <= "00000000";
+        o_done <= '0';
+        if i_clk'event and i_clk = '1' then
+            o_z0 <= z0;
+            o_z1 <= z1;
+            o_z2 <= z2;
+            o_z3 <= z3;
+            o_done <= '1';
+        end if;
+    end process;
 end architecture;
