@@ -45,14 +45,14 @@ entity project_reti_logiche is port (
 end project_reti_logiche;
 
 architecture Behavioral of project_reti_logiche is
-    component SHIFTER_comp is port (
+    component serial_to_parallel is port (
         i_clk : in std_logic;
         i_rst: in std_logic;
         i_w : in std_logic;
         o_par : out std_logic_vector(15 downto 0)
     );
     end component;
-    component DATAPATH_comp is port ( 
+    component DATAPATH is port ( 
         i_clk : in std_logic;
         i_rst : in std_logic;
         done : in std_logic;
@@ -82,14 +82,14 @@ architecture Behavioral of project_reti_logiche is
     signal d_sel : std_logic_vector(1 downto 0);
     
 begin
-    SHIFTER : SHIFTER_comp port map(
+    SHIFTER : serial_to_parallel port map(
         i_clk => i_clk,
         i_rst => s_rst,
         i_w => s_w,
         o_par => s_addr
     );
     
-    DATAPATH : DATAPATH_comp port map(
+    DATAPATH_comp : DATAPATH port map(
         i_clk => i_clk,
         i_rst => i_rst,
         done => done,
@@ -180,6 +180,7 @@ begin
                 end if;
              when S5 => 
                 done <= '1';
+                o_done <= '1';
              end case;
              end process;
 end Behavioral;
@@ -205,10 +206,10 @@ entity datapath is port (
 end datapath;
 
 architecture datapath_arch of datapath is
-    signal z0 : std_logic_vector(7 downto 0);
-    signal z1 : std_logic_vector(7 downto 0);
-    signal z2 : std_logic_vector(7 downto 0);
-    signal z3 : std_logic_vector(7 downto 0);
+    signal z0 : std_logic_vector(7 downto 0) := "00000000";
+    signal z1 : std_logic_vector(7 downto 0) := "00000000";
+    signal z2 : std_logic_vector(7 downto 0) := "00000000";
+    signal z3 : std_logic_vector(7 downto 0) := "00000000";
     
     begin 
     z0_p : process(i_clk, i_rst)
@@ -262,7 +263,7 @@ architecture datapath_arch of datapath is
         o_z2 <= "00000000";
         o_z3 <= "00000000";
         o_done <= '0';
-        if i_clk'event and i_clk = '1' then
+        if i_clk'event and i_clk = '1' and done = '1' then
             o_z0 <= z0;
             o_z1 <= z1;
             o_z2 <= z2;
