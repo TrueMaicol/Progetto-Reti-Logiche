@@ -69,7 +69,7 @@ architecture Behavioral of project_reti_logiche is
     );
     end component;
     
-    type S is (S0,S1,S2,S3,S4,S5);
+    type S is (S0,S1,S2,S3,S4,S5,S6,S10);
     signal curr_state : S;
     signal s_w : std_logic;
     signal s_rst : std_logic;
@@ -127,18 +127,22 @@ begin
                     if i_start = '1' then
                         curr_state <= S3;
                     else 
-                        curr_state <= S4;
+                        curr_state <= S10;
                     end if;
                 when S3 =>
                     if i_start = '1' then
                         curr_state <= S3;
                     else 
-                        curr_state <= S4;
+                        curr_state <= S10;
                     end if;
                 when S4 =>
                     curr_state <= S5;
                 when S5 => 
+                    curr_state <= S6;
+                when S6 =>
                     curr_state <= S0;
+                when S10  => 
+                    curr_state <= S4;
             end case;
            end if;
     end process;
@@ -169,6 +173,7 @@ begin
             when S4 =>
                 o_mem_en <= '1';
                 o_mem_addr <= s_addr;
+             when S5 => 
                 if d_sel = "00" then
                     z0_load <= '1';
                 elsif d_sel = "01" then 
@@ -178,9 +183,9 @@ begin
                 else
                     z3_load <= '1';
                 end if;
-             when S5 => 
+             when S6 =>
                 done <= '1';
-                o_done <= '1';
+             when S10 => 
              end case;
              end process;
 end Behavioral;
@@ -258,17 +263,20 @@ architecture datapath_arch of datapath is
     
     out_p : process(i_clk, done)
     begin 
-        o_z0 <= "00000000";
-        o_z1 <= "00000000";
-        o_z2 <= "00000000";
-        o_z3 <= "00000000";
-        o_done <= '0';
-        if i_clk'event and i_clk = '1' and done = '1' then
-            o_z0 <= z0;
-            o_z1 <= z1;
-            o_z2 <= z2;
-            o_z3 <= z3;
-            o_done <= '1';
+        if i_clk'event and i_clk = '1' then
+            if done = '1' then
+                o_z0 <= z0;
+                o_z1 <= z1;
+                o_z2 <= z2;
+                o_z3 <= z3;
+                o_done <= '1';
+            else 
+                o_z0 <= "00000000";
+                o_z1 <= "00000000";
+                o_z2 <= "00000000";
+                o_z3 <= "00000000";
+                o_done <= '0';
+            end if;
         end if;
     end process;
 end architecture;
