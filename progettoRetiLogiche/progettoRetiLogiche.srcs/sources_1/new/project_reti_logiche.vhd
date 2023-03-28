@@ -69,7 +69,7 @@ architecture Behavioral of project_reti_logiche is
     );
     end component;
     
-    type S is (S0,S1,S2,S3,S4,S5,S6);
+    type S is (WAIT_START,ADD1,ADD2,MANAGE_W,ASK_MEM,SAVE_DATA,OUTPUT);
     signal curr_state : S;
     signal s_w : std_logic;
     signal s_rst : std_logic;
@@ -108,39 +108,39 @@ begin
     fsm : process(i_clk, i_rst)
     begin 
         if i_rst = '1' then
-            curr_state <= S0;
+            curr_state <= WAIT_START;
         elsif i_clk'event and i_clk = '1' then
             case curr_state is
-                when S0 => 
+                when WAIT_START => 
                     if i_start = '1' then
-                        curr_state <= S1;
+                        curr_state <= ADD1;
                     else 
-                        curr_state <= S0;
+                        curr_state <= WAIT_START;
                     end if;
-                when S1 =>
+                when ADD1 =>
                     if i_start = '1' then
-                        curr_state <= S2;
+                        curr_state <= ADD2;
                     else 
-                        curr_state <= S0;
+                        curr_state <= WAIT_START;
                     end if;
-                when S2 => 
+                when ADD2 => 
                     if i_start = '1' then
-                        curr_state <= S3;
+                        curr_state <= MANAGE_W;
                     else 
-                        curr_state <= S4;
+                        curr_state <= ASK_MEM;
                     end if;
-                when S3 =>
+                when MANAGE_W =>
                     if i_start = '1' then
-                        curr_state <= S3;
+                        curr_state <= MANAGE_W;
                     else 
-                        curr_state <= S4;
+                        curr_state <= ASK_MEM;
                     end if;
-                when S4 =>
-                    curr_state <= S5;
-                when S5 => 
-                    curr_state <= S6;
-                when S6 =>
-                    curr_state <= S0;
+                when ASK_MEM =>
+                    curr_state <= SAVE_DATA;
+                when SAVE_DATA => 
+                    curr_state <= OUTPUT;
+                when OUTPUT =>
+                    curr_state <= WAIT_START;
             end case;
            end if;
     end process;
@@ -159,19 +159,19 @@ begin
         z3_load <= '0';
         
         case curr_state is
-            when S0 =>
+            when WAIT_START =>
                 d_sel <= "00";
-            when S1 => 
+            when ADD1 => 
                 d_sel(1) <= i_w;
                 s_rst <= '1';
-            when S2 => 
+            when ADD2 => 
                 d_sel(0) <= i_w;
-            when S3 => 
+            when MANAGE_W => 
                 --s_w <= i_w;
-            when S4 =>
+            when ASK_MEM =>
                 o_mem_en <= '1';
                 o_mem_addr <= s_addr;
-             when S5 => 
+             when SAVE_DATA => 
                 if d_sel = "00" then
                     z0_load <= '1';
                 elsif d_sel = "01" then 
@@ -181,7 +181,7 @@ begin
                 else
                     z3_load <= '1';
                 end if;
-             when S6 =>
+             when OUTPUT =>
                 done <= '1'; 
              end case;
              end process;
