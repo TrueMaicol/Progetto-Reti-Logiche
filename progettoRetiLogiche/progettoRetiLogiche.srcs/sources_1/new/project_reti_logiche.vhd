@@ -69,7 +69,7 @@ architecture Behavioral of project_reti_logiche is
     );
     end component;
     
-    type S is (S0,S1,S2,S3,S4,S5,S6,S10);
+    type S is (S0,S1,S2,S3,S4,S5,S6);
     signal curr_state : S;
     signal s_w : std_logic;
     signal s_rst : std_logic;
@@ -85,7 +85,7 @@ begin
     SHIFTER : serial_to_parallel port map(
         i_clk => i_clk,
         i_rst => s_rst,
-        i_w => s_w,
+        i_w => i_w,
         o_par => s_addr
     );
     
@@ -127,13 +127,13 @@ begin
                     if i_start = '1' then
                         curr_state <= S3;
                     else 
-                        curr_state <= S10;
+                        curr_state <= S4;
                     end if;
                 when S3 =>
                     if i_start = '1' then
                         curr_state <= S3;
                     else 
-                        curr_state <= S10;
+                        curr_state <= S4;
                     end if;
                 when S4 =>
                     curr_state <= S5;
@@ -141,8 +141,6 @@ begin
                     curr_state <= S6;
                 when S6 =>
                     curr_state <= S0;
-                when S10  => 
-                    curr_state <= S4;
             end case;
            end if;
     end process;
@@ -165,11 +163,11 @@ begin
                 d_sel <= "00";
             when S1 => 
                 d_sel(1) <= i_w;
+                s_rst <= '1';
             when S2 => 
                 d_sel(0) <= i_w;
-                s_rst <= '1';
             when S3 => 
-                s_w <= i_w;
+                --s_w <= i_w;
             when S4 =>
                 o_mem_en <= '1';
                 o_mem_addr <= s_addr;
@@ -184,8 +182,7 @@ begin
                     z3_load <= '1';
                 end if;
              when S6 =>
-                done <= '1';
-             when S10 => 
+                done <= '1'; 
              end case;
              end process;
 end Behavioral;
