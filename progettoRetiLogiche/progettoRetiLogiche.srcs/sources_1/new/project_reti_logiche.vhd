@@ -80,6 +80,8 @@ architecture Behavioral of project_reti_logiche is
     signal z2_load : std_logic;
     signal z3_load : std_logic;
     signal d_sel : std_logic_vector(1 downto 0);
+    signal d0_load : std_logic;
+    signal d1_load : std_logic;
     
 begin
     SHIFTER : serial_to_parallel port map(
@@ -157,15 +159,19 @@ begin
         z1_load <= '0';
         z2_load <= '0';
         z3_load <= '0';
+        d1_load <= '0';
+        d0_load <= '0';
         
         case curr_state is
             when WAIT_START =>
-                d_sel <= "00";
+                --d_sel <= "00";
+                d1_load <= '1';
             when ADD1 => 
-                d_sel(1) <= i_w;
+                --d_sel(1) <= i_w;
                 s_rst <= '1';
+                d0_load <= '1';
             when ADD2 => 
-                d_sel(0) <= i_w;
+                --d_sel(0) <= i_w;
             when MANAGE_W => 
                 --s_w <= i_w;
             when ASK_MEM =>
@@ -184,7 +190,21 @@ begin
              when OUTPUT =>
                 done <= '1'; 
              end case;
-             end process;
+     end process;
+     
+     sel: process(i_clk, i_rst)
+     begin
+        if i_rst = '1' then
+            d_sel <= (others => '0');
+        elsif i_clk'event and i_clk = '1' then
+            if d0_load = '1' then
+                d_sel(0) <= i_w;
+            elsif d1_load = '1' then
+                d_sel(1) <= i_w;
+            end if;
+        end if;
+     end process; 
+    
 end Behavioral;
 
 library IEEE;
