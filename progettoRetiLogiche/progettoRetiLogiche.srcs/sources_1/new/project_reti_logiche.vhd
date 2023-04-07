@@ -147,7 +147,7 @@ begin
            end if;
     end process;
     
-    lambda : process(curr_state) 
+    lambda : process(curr_state, s_addr, d_sel) 
     begin
         s_w <= '0';
         s_rst <= '0';
@@ -164,20 +164,16 @@ begin
         
         case curr_state is
             when WAIT_START =>
-                --d_sel <= "00";
                 d1_load <= '1';
             when ADD1 => 
-                --d_sel(1) <= i_w;
                 s_rst <= '1';
                 d0_load <= '1';
             when ADD2 => 
-                --d_sel(0) <= i_w;
+     
             when MANAGE_W => 
-                --s_w <= i_w;
-            when ASK_MEM =>
                 o_mem_en <= '1';
                 o_mem_addr <= s_addr;
-             when SAVE_DATA => 
+            when ASK_MEM =>
                 if d_sel = "00" then
                     z0_load <= '1';
                 elsif d_sel = "01" then 
@@ -187,8 +183,10 @@ begin
                 else
                     z3_load <= '1';
                 end if;
+             when SAVE_DATA => 
+                 done <= '1';
              when OUTPUT =>
-                done <= '1'; 
+                
              end case;
      end process;
      
