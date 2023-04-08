@@ -69,7 +69,7 @@ architecture Behavioral of project_reti_logiche is
     );
     end component;
     
-    type S is (WAIT_START,ADD1,ADD2,MANAGE_W,ASK_MEM,SAVE_DATA,OUTPUT);
+    type S is (WAIT_START,ADD1,ADD2,LOAD_MEM,SAVE_DATA,OUTPUT);
     signal curr_state : S;
     signal s_w : std_logic;
     signal s_rst : std_logic;
@@ -126,22 +126,16 @@ begin
                         curr_state <= WAIT_START;
                     end if;
                 when ADD2 => 
+                    curr_state <= LOAD_MEM;
+                when LOAD_MEM =>
                     if i_start = '1' then
-                        curr_state <= MANAGE_W;
+                        curr_state <= LOAD_MEM;
                     else 
-                        curr_state <= ASK_MEM;
+                        curr_state <= SAVE_DATA;
                     end if;
-                when MANAGE_W =>
-                    if i_start = '1' then
-                        curr_state <= MANAGE_W;
-                    else 
-                        curr_state <= ASK_MEM;
-                    end if;
-                when ASK_MEM =>
-                    curr_state <= SAVE_DATA;
-                when SAVE_DATA => 
+                when SAVE_DATA =>
                     curr_state <= OUTPUT;
-                when OUTPUT =>
+                when OUTPUT => 
                     curr_state <= WAIT_START;
             end case;
            end if;
@@ -170,10 +164,10 @@ begin
                 d0_load <= '1';
             when ADD2 => 
      
-            when MANAGE_W => 
+            when LOAD_MEM => 
                 o_mem_en <= '1';
                 o_mem_addr <= s_addr;
-            when ASK_MEM =>
+            when SAVE_DATA =>
                 if d_sel = "00" then
                     z0_load <= '1';
                 elsif d_sel = "01" then 
@@ -183,10 +177,8 @@ begin
                 else
                     z3_load <= '1';
                 end if;
-             when SAVE_DATA => 
-                 done <= '1';
-             when OUTPUT =>
-                
+             when OUTPUT => 
+                 done <= '1';                
              end case;
      end process;
      
