@@ -1,26 +1,27 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
-entity serial_to_parallel is port (
+entity ShifterRegister is port (
     i_clk : in std_logic;
     i_rst: in std_logic;
     i_w : in std_logic;
+    i_start: in std_logic;
 	o_par : out std_logic_vector(15 downto 0));
-end serial_to_parallel;
+end ShifterRegister;
 
-architecture Behavioral of serial_to_parallel is
+architecture Behavioral of ShifterRegister is
     signal temp: std_logic_vector(15 downto 0);
     begin
-        process(i_clk, i_rst)
-        begin
-            if (i_clk'event and i_clk='1') then
-                if(i_rst='1') then
-                    temp <= "0000000000000000";
-                else    
-                    temp <= temp(14 downto 0) & i_w;
+        shifter_process : process(i_clk, i_rst)
+            begin
+                if i_clk'event and i_clk='1' then
+                    if i_rst='1' then
+                        temp <= "0000000000000000";
+                    elsif i_start = '1' then    
+                        temp <= temp(14 downto 0) & i_w;
+                    end if;
                 end if;
-		    end if;
-		end process;
+            end process;
 	o_par <= temp;
 end Behavioral;
 
@@ -45,10 +46,11 @@ entity project_reti_logiche is port (
 end project_reti_logiche;
 
 architecture Behavioral of project_reti_logiche is
-    component serial_to_parallel is port (
+    component ShifterRegister is port (
         i_clk : in std_logic;
         i_rst: in std_logic;
         i_w : in std_logic;
+        i_start : in std_logic;
         o_par : out std_logic_vector(15 downto 0)
     );
     end component;
@@ -84,10 +86,11 @@ architecture Behavioral of project_reti_logiche is
     signal d1_load : std_logic;
     
 begin
-    SHIFTER : serial_to_parallel port map(
+    SHIFTER : ShifterRegister port map(
         i_clk => i_clk,
         i_rst => s_rst,
         i_w => i_w,
+        i_start => i_start,
         o_par => s_addr
     );
     
